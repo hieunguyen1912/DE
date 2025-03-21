@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pyarrow.jvm import schema
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, to_timestamp, date_format
+from pyspark.sql.functions import col
 from pyspark.sql.types import *
 
 
@@ -163,15 +163,12 @@ schemaType = StructType([
 ])
 
 jsonData = spark.read.schema(schemaType).json(r"C:\Users\ASUS\Documents\DE-Learning\data-20250317T120342Z-001\data\2015-03-01-17.json\2015-03-01-17.json")
-jsonData.printSchema()
-jsonData.show(truncate=False)
-#jsonData.show(truncate=False)
-# jsonData.select(
-#     "id",
-#     "type",
-#     "actor.id",
-#     "actor.login",
-#     "actor.gravatar_id",
-#     "actor.url",
-#     "actor.avatar_url"
-# ).show(truncate=False)
+
+# jsonData.where("actor.id < 20000").show()
+# jsonData.select(col("id"), col("actor.id").alias("hieu")).filter((col("id") == "2615567732") & (col("actor.id") == "19299")).show()
+
+from pyspark.sql.functions import length
+jsonData.select(col("id")).where(length(col("id")) < 11).show()
+
+
+

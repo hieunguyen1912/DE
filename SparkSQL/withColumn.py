@@ -1,8 +1,5 @@
-from datetime import datetime
-
-from pyarrow.jvm import schema
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, to_timestamp, date_format
+from pyspark.sql.functions import col, to_timestamp, date_format, lit, struct, udf
 from pyspark.sql.types import *
 
 
@@ -163,15 +160,100 @@ schemaType = StructType([
 ])
 
 jsonData = spark.read.schema(schemaType).json(r"C:\Users\ASUS\Documents\DE-Learning\data-20250317T120342Z-001\data\2015-03-01-17.json\2015-03-01-17.json")
-jsonData.printSchema()
-jsonData.show(truncate=False)
-#jsonData.show(truncate=False)
-# jsonData.select(
-#     "id",
-#     "type",
-#     "actor.id",
-#     "actor.login",
-#     "actor.gravatar_id",
-#     "actor.url",
-#     "actor.avatar_url"
-# ).show(truncate=False)
+
+'''
+colName: ten cot
+column: gia tri cua cot
+
+them cot moi neu colName khong ton tai
+ghi de len cot hien co ( colName ton ai )
+
+
+col(), lit(), when(), struct(): de xac dinh gia tri cua cot
+
+'''
+
+# jsonData.withColumn("id2", lit("hdtr")).select(col("id"), col("id2")).show()
+# jsonData.withColumn("actor.id2", lit("hdtr")).select(col("actor.id2")).show()
+
+
+#add id2 to actor structype
+
+# jsonDataStruct = jsonData.withColumn(
+#     "actor",
+#     struct(
+#         col("actor.id").alias("id"),
+#         col("actor.login").alias("login"),
+#         col("actor.gravatar_id").alias("gravatar_id"),
+#         col("actor.url").alias("url"),
+#         col("actor.avatar_url").alias("avatar_url"),
+#         lit("hieudeptrai").alias("id2")
+#     )
+# ).select(col("actor.id"), col("actor.id2")).show()
+
+#function UDF: user define
+
+# def add_three(data):
+#     return data + 3
+#
+# addThreeUdf = udf(add_three)
+#
+# df = jsonData.withColumn("hieu", addThreeUdf(col("actor.id")))
+# df.select(col("actor.id").alias("old_col"), col("hieu").alias("new_col")).show()
+
+data = [
+    ("11/12/2025",),
+    ("27/02.2014",),
+    ("2023.01.09",),
+    ("28-12-2005",)
+]
+
+df = spark.createDataFrame(data, ["date"])
+df.show()
+
+date_schema = StructType([
+    StructField("day", StringType(), True),
+    StructField("month", StringType(), True),
+    StructField("year", StringType(), True)
+])
+
+
+def parse_date(data: str) -> dict:
+    if ('/' in data) and ('.' not in data):
+        date = data.split('/')
+        day, month, year =  date[0], date[1], date[2]
+        return {"day": day, "month": month, "year": year}
+    elif ('.' in data) and ('/' not in data) and ('-' not in data):
+        date = data.split('.')
+        year, month, day = date[0], date[1], date[2]
+        return {"day": day, "month": month, "year": year}
+    elif ('-' in data):
+        date = data.split('-')
+        day, month, year = date[0], date[1], date[2]
+        return {"day": day, "month": month, "year": year}
+    elif ('/' in data) and ('.' in data):
+        part = data.split('/')
+        day = part[0]
+        date = part[1].split('.')
+        month, year = date[0], date[1]
+        return {"day": day, "month": month, "year": year}
+    else:
+        return {"day": None, "month": None, "year": None}
+
+
+parse_dateUDF = udf(parse_date, date_schema)
+result_df = df.withColumn("parsed_date", parse_dateUDF(df["date"]))
+final_df = result_df.select(
+    "date",
+    "parsed_date.day",
+    "parsed_date.month",
+    "parsed_date.year"
+)
+final_df.show()
+
+
+
+
+
+
+

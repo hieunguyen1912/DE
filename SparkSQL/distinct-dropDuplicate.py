@@ -163,15 +163,20 @@ schemaType = StructType([
 ])
 
 jsonData = spark.read.schema(schemaType).json(r"C:\Users\ASUS\Documents\DE-Learning\data-20250317T120342Z-001\data\2015-03-01-17.json\2015-03-01-17.json")
-jsonData.printSchema()
-jsonData.show(truncate=False)
-#jsonData.show(truncate=False)
-# jsonData.select(
-#     "id",
-#     "type",
-#     "actor.id",
-#     "actor.login",
-#     "actor.gravatar_id",
-#     "actor.url",
-#     "actor.avatar_url"
-# ).show(truncate=False)
+
+# jsonData.select(col("payload.forkee.name")) \
+#     .distinct() \
+#     .show()
+
+# jsonData.select(col("payload.forkee.name")) \
+#     .distinct() \
+#     .selectExpr("count(name) as count") \
+#     .show()
+
+
+jsonData.select(col("payload.forkee.name")).alias("name").dropDuplicates(["name"]).show()
+
+
+
+
+
